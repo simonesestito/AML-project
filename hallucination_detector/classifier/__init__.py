@@ -1,1 +1,1 @@
-from .original_saplma import OriginalSAPLMA
+from .original_saplma import OriginalSAPLMAClassifier
