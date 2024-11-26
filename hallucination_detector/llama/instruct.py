@@ -27,10 +27,11 @@ class LlamaInstruct:
 
         self.registered_hooks = []
 
-    def eval(self):
+    def eval(self) -> 'LlamaInstruct':
         self.model.eval()
         for param in self.model.parameters():
             param.requires_grad = False
+        return self
 
     # to tokenize input prompts
     def tokenize(self, prompts: str | LlamaPrompt | list[str | LlamaPrompt], pad_to_max_length: int = 70) -> tuple[dict, list[LlamaPrompt]]:
