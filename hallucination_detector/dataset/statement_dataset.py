@@ -68,4 +68,20 @@ class StatementDataset(Dataset):
         label = torch.tensor(row['label'])
         topic = row['topic']
         return statement, label, topic
+    
+
+    def split_by_topic(self, topic: str) -> tuple['StatementDataset', 'StatementDataset']:
+        """
+        Split the dataset into two parts based on the 'topic' column.
+
+        Args:
+            topic (str): The value in the 'topic' column to split on.
+
+        Returns:
+            tuple: Two StatementDatasets, one for all but the specified topic (TRAIN+VAL), and one for the specified topic (TEST).
+        """
+        mask = self.data['topic'] == topic
+        topic_data = self.data[mask]
+        other_data = self.data[~mask]
+        return StatementDataset(other_data), StatementDataset(topic_data)
 
