@@ -84,4 +84,12 @@ class StatementDataset(Dataset):
         topic_data = self.data[mask]
         other_data = self.data[~mask]
         return StatementDataset(other_data), StatementDataset(topic_data)
+        
+    def get_topics(self) -> list[str]:
+        """
+        Get the unique topics (source file names) in the dataset.
 
+        Returns:
+            list: Unique topics.
+        """
+        return self.data['topic'].unique().tolist()
