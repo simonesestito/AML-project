@@ -48,7 +48,7 @@ class LlamaHiddenStatesExtractor:
 
                 hidden_state = outputs[0]
                 assert isinstance(hidden_state, torch.Tensor), f"Expected hidden_state to be a torch.Tensor. Found: {type(hidden_state)}"
-                assert hidden_state.shape == (1, 70, 2048), f"Expected hidden_state to have shape (1, 70, 2048). Found: {hidden_state.shape}"
+                assert hidden_state.size(1) == 70 and hidden_state.size(2) == 2048, f"Expected hidden_state to have shape (?, 70, 2048). Found: {hidden_state.shape}"
                 hidden_states.append(hidden_state)
             return _hook
         
