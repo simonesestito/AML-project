@@ -42,8 +42,8 @@ class StatementDataModule(pl.LightningDataModule):
 
         if stage == "fit" or stage is None:
             # Create random train/val splits from the train_val subset
-            val_size = int(self.validation_set_percentage * len(self.dataset))
-            train_size = len(self.dataset) - val_size
+            val_size = int(self.validation_set_percentage * len(self.train_val_split))
+            train_size = len(self.train_val_split) - val_size
             self.train_dataset, self.val_dataset = random_split(self.train_val_split, [train_size, val_size])
 
     def train_dataloader(self) -> DataLoader:
