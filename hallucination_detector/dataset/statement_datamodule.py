@@ -46,8 +46,8 @@ class StatementDataModule(pl.LightningDataModule):
             train_size = len(self.train_val_split) - val_size
             self.train_dataset, self.val_dataset = random_split(self.train_val_split, [train_size, val_size])
 
-    def train_dataloader(self) -> DataLoader:
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+    def train_dataloader(self, shuffle: bool = True) -> DataLoader:
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=shuffle)
     
     def val_dataloader(self) -> DataLoader:
         return DataLoader(self.val_dataset, batch_size=self.batch_size)
