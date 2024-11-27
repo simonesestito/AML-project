@@ -34,10 +34,10 @@ class LlamaInstruct:
         return self
 
     # to tokenize input prompts
-    def tokenize(self, prompts: str | LlamaPrompt | list[str | LlamaPrompt], pad_to_max_length: int = 70) -> tuple[dict, list[LlamaPrompt]]:
+    def tokenize(self, prompts: str | LlamaPrompt | list[str | LlamaPrompt] | tuple[str | LlamaPrompt], pad_to_max_length: int = 70) -> tuple[dict, list[LlamaPrompt]]:
 
         # Make prompts a list anyway
-        if not isinstance(prompts, list):
+        if not isinstance(prompts, list) and not isinstance(prompts, tuple):
             prompts = [ prompts ]
 
         # Convert all prompts to LlamaPrompt
@@ -92,7 +92,7 @@ class LlamaInstruct:
             yield LlamaResponse(prompt, generated)
 
     # to get textual Llama responses starting from textual prompts
-    def run(self, prompts: str | LlamaPrompt | list[str | LlamaPrompt], verbose: bool = False) -> Iterator[LlamaResponse]:
+    def run(self, prompts: str | LlamaPrompt | list[str | LlamaPrompt] | tuple[str | LlamaPrompt], verbose: bool = False) -> Iterator[LlamaResponse]:
 
         # Optional logging function
         def _print(*args, **kwargs):
