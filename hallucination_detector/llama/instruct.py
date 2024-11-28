@@ -3,6 +3,7 @@ import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from .prompt import LlamaPrompt
 from .response import LlamaResponse
+from .types import LlamaInstructInput
 from typing import Iterator
 
 class LlamaInstruct:
@@ -34,8 +35,7 @@ class LlamaInstruct:
         return self
 
     # to tokenize input prompts
-    def tokenize(self, prompts: str | LlamaPrompt | list[str | LlamaPrompt] | tuple[str | LlamaPrompt], pad_to_max_length: int = 70) -> tuple[dict, list[LlamaPrompt]]:
-
+    def tokenize(self, prompts: LlamaInstructInput, pad_to_max_length: int = 70) -> tuple[dict, list[LlamaPrompt]]:
         # Make prompts a list anyway
         if not isinstance(prompts, list) and not isinstance(prompts, tuple):
             prompts = [ prompts ]
@@ -92,7 +92,7 @@ class LlamaInstruct:
             yield LlamaResponse(prompt, generated)
 
     # to get textual Llama responses starting from textual prompts
-    def run(self, prompts: str | LlamaPrompt | list[str | LlamaPrompt] | tuple[str | LlamaPrompt], verbose: bool = False) -> Iterator[LlamaResponse]:
+    def run(self, prompts: LlamaInstructInput, verbose: bool = False) -> Iterator[LlamaResponse]:
 
         # Optional logging function
         def _print(*args, **kwargs):

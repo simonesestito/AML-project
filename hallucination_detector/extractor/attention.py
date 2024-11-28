@@ -1,6 +1,7 @@
 import torch
 from ..llama import LlamaInstruct
 from .tokenizer import tokenize_prompts_fixed_length, convert_internals_from_layers_to_batch_items
+from .types import PromptType
 
 class LlamaAttentionExtractor:
 
@@ -14,7 +15,7 @@ class LlamaAttentionExtractor:
 
 
     @torch.no_grad()
-    def extract_input_attention_maps_for_layer(self, prompt: str | list[str] | tuple[str], for_layer: int) -> torch.Tensor:
+    def extract_input_attention_maps_for_layer(self, prompt: PromptType, for_layer: int) -> torch.Tensor:
         """
         Given a batch of prompts, with length BATCH_SIZE,
         extract the attention maps for the requested layer.
@@ -25,7 +26,7 @@ class LlamaAttentionExtractor:
 
 
     @torch.no_grad()
-    def extract_input_attention_maps_for_layers(self, prompt: str | list[str] | tuple[str], for_layers: list[int]) -> torch.Tensor:
+    def extract_input_attention_maps_for_layers(self, prompt: PromptType, for_layers: list[int]) -> torch.Tensor:
         """
         Given a batch of prompts, with length BATCH_SIZE,
         extract the attention maps for the L requested layers.
