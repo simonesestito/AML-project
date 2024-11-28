@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TypeAlias
 
-type PromptType = str | list[str] | tuple[str]
-type TokenReductionType = Literal['mean', 'last']
+PromptType: TypeAlias = str | list[str] | tuple[str]
+TokenReductionType: TypeAlias = Literal['mean', 'last']

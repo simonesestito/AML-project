@@ -1,4 +1,5 @@
+from typing import TypeAlias
 from .prompt import LlamaPrompt
 
-type SingleLlamaInstructInput = str | LlamaPrompt
-type LlamaInstructInput = SingleLlamaInstructInput | list[SingleLlamaInstructInput] | tuple[SingleLlamaInstructInput]
+SingleLlamaInstructInput: TypeAlias = str | LlamaPrompt
+LlamaInstructInput: TypeAlias = SingleLlamaInstructInput | list[SingleLlamaInstructInput] | tuple[SingleLlamaInstructInput]
