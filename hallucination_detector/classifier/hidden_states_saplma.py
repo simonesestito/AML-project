@@ -40,7 +40,7 @@ class LightningHiddenStateSAPLMA(pl.LightningModule):
 
         # We need to reduce the hidden states to a single tensor dimension for all the tokens
         model_dtype = next(self.saplma_classifier.parameters()).dtype
-        reduced_hidden_states = self.reduction(statements, model_dtype)
+        reduced_hidden_states = self.reduction(statements, self.hidden_states_extractor, model_dtype)
         assert len(reduced_hidden_states.shape) == 2, \
             f'Expected reduced_hidden_states dimensions to be 2. Found: {reduced_hidden_states.shape}, with reduction: {self.reduction}'
 
@@ -92,12 +92,12 @@ class HiddenStatesReduction(nn.Module):
         self.reduction = reduction
         self.hidden_states_layer_idx = hidden_states_layer_idx
         
-    def forward(self, statements: tuple[str], model_dtype) -> torch.Tensor:
+    def forward(self, statements: tuple[str], extractor, model_dtype) -> torch.Tensor:
         """
         Apply reduction on hidden states: mean or last token
         """
         # Extract statements hidden states
-        hidden_states = self.hidden_states_extractor.extract_input_hidden_states_for_layer(
+        hidden_states = extractor.extract_input_hidden_states_for_layer(
             prompt=statements, for_layer=self.hidden_states_layer_idx).to(dtype=model_dtype)
         match self.reduction:
             case 'mean':
@@ -115,12 +115,12 @@ class WeightedMeanReduction(nn.Module):
         # Define learnable weight matrix (num_layers x num_tokens)
         self.weight_matrix = nn.Parameter(torch.randn(num_layers, num_tokens) * 0.01)
 
-    def forward(self, statements: tuple[str], modeldtype) -> torch.Tensor:
+    def forward(self, statements: tuple[str], extractor, modeldtype) -> torch.Tensor:
         """
         Apply weighted mean across layers and tokens
         """
         
-        hidden_states = self.hidden_states_extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=set(x for x in range(16))).to(dtype=modeldtype)
+        hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=set(x for x in range(16))).to(dtype=modeldtype)
         # Expand weight matrix for broadcasting across batch dimension and hidden dimension
         weight_matrix_expanded = self.weight_matrix.unsqueeze(0).unsqueeze(-1)  # Shape: (1, num_layers, num_tokens, 1)
 
