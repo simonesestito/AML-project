@@ -1,2 +1,4 @@
 from .original_saplma import OriginalSAPLMAClassifier
 from .hidden_states_saplma import LightningHiddenStateSAPLMA
+from .hidden_states_saplma import HiddenStatesReduction
+from .hidden_states_saplma import WeightedMeanReduction
