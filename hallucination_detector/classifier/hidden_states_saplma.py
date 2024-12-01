@@ -40,7 +40,7 @@ class LightningHiddenStateSAPLMA(pl.LightningModule):
 
         # We need to reduce the hidden states to a single tensor dimension for all the tokens
         model_dtype = next(self.saplma_classifier.parameters()).dtype
-        reduced_hidden_states = self.reduction(statements)
+        reduced_hidden_states = self.reduction(statements, model_dtype)
         assert len(reduced_hidden_states.shape) == 2, \
             f'Expected reduced_hidden_states dimensions to be 2. Found: {reduced_hidden_states.shape}, with reduction: {self.reduction}'
 
