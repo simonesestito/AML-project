@@ -14,19 +14,16 @@ class LightningHiddenStateSAPLMA(pl.LightningModule):
         self,
         llama: LlamaInstruct,
         saplma_classifier: nn.Module,
-        hidden_states_layer_idx: int,
-        reduction: TokenReductionType = 'last',  # Use 'last' as default since it performed much better in notebook 2
+        reduction: nn.Module,
         lr: float = 1e-5,
     ):
         super().__init__()
         llama.eval()
         self.hidden_states_extractor = LlamaHiddenStatesExtractor(llama)
         self.saplma_classifier = saplma_classifier
-
-        self.hidden_states_layer_idx = hidden_states_layer_idx
         self.reduction = reduction
         self.lr = lr
-        self.save_hyperparameters('hidden_states_layer_idx', 'reduction', 'lr')
+        self.save_hyperparameters('lr')
 
     def on_fit_start(self):
         self.saplma_classifier.train()
@@ -40,34 +37,14 @@ class LightningHiddenStateSAPLMA(pl.LightningModule):
                     nn.init.zeros_(module.bias)
 
     def forward(self, statements: tuple[str]):
-        # Extract statements hidden states
-        model_dtype = next(self.saplma_classifier.parameters()).dtype
-        hidden_states = self.hidden_states_extractor.extract_input_hidden_states_for_layer(
-            prompt=statements, for_layer=self.hidden_states_layer_idx).to(dtype=model_dtype)
 
         # We need to reduce the hidden states to a single tensor dimension for all the tokens
-        reduced_hidden_states = self._apply_hidden_states_reduction(hidden_states)
+        reduced_hidden_states = self.reduction(statements)
         assert len(reduced_hidden_states.shape) == 2, \
             f'Expected reduced_hidden_states dimensions to be 2. Found: {reduced_hidden_states.shape}, with reduction: {self.reduction}'
 
         # Classify
         return self.saplma_classifier(reduced_hidden_states)
-    
-    def _apply_hidden_states_reduction(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        '''
-        Reduce the hidden states to a single tensor dimension for all the tokens.
-        The reduction strategy is decided by the `reduction` attribute.
-        '''
-        match self.reduction:
-            case 'mean':
-                # Average across all the input tokens
-                return torch.mean(hidden_states, dim=1)
-            case 'last':
-                # Get the last token hidden state
-                return hidden_states[:, -1, :]
-            case _:
-                raise ValueError(f'Unknown reduction type: {self.reduction}')
-
 
     def do_step(self, batch, prefix_str: str):
         statements, labels, _ = batch
@@ -107,3 +84,55 @@ class LightningHiddenStateSAPLMA(pl.LightningModule):
     def configure_optimizers(self):
         assert self.hparams.batch_size is not None, 'batch_size must be set in model.hparams'
         return torch.optim.AdamW(self.parameters(), lr=self.lr * self.hparams.batch_size)
+
+class HiddenStatesReduction(nn.Module):
+    def __init__(self, hidden_states_layer_idx: int, reduction: str = 'last'):
+        super(HiddenStatesReduction, self).__init__()
+        self.reduction = reduction
+        self.hidden_states_layer_idx = hidden_states_layer_idx
+        
+    def forward(self, statements: tuple[str]) -> torch.Tensor:
+        """
+        Apply reduction on hidden states: mean or last token
+        """
+        # Extract statements hidden states
+        model_dtype = next(self.saplma_classifier.parameters()).dtype
+        hidden_states = self.hidden_states_extractor.extract_input_hidden_states_for_layer(
+            prompt=statements, for_layer=self.hidden_states_layer_idx).to(dtype=model_dtype)
+        match self.reduction:
+            case 'mean':
+                return torch.mean(hidden_states, dim=1)  # Mean across tokens
+            case 'last':
+                return hidden_states[:, -1, :]  # Last token hidden state
+            case _:
+                raise ValueError(f'Unknown reduction type: {self.reduction}')
+                
+
+class WeightedMeanReduction(nn.Module):
+    def __init__(self, num_layers: int = 16, num_tokens: int = 70):
+        super(WeightedMeanReduction, self).__init__()
+        
+        # Define learnable weight matrix (num_layers x num_tokens)
+        self.weight_matrix = nn.Parameter(torch.randn(num_layers, num_tokens) * 0.01)
+
+    def forward(self, statements: tuple[str]) -> torch.Tensor:
+        """
+        Apply weighted mean across layers and tokens
+        """
+        model_dtype = next(self.saplma_classifier.parameters()).dtype
+        hidden_states = self.hidden_states_extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=set(x for x in range(16))).to(dtype=model_dtype)
+        # Expand weight matrix for broadcasting across batch dimension and hidden dimension
+        weight_matrix_expanded = self.weight_matrix.unsqueeze(0).unsqueeze(-1)  # Shape: (1, num_layers, num_tokens, 1)
+
+        # Apply weights to the hidden states: multiply element-wise
+        weighted_hidden_states = hidden_states * weight_matrix_expanded  # Shape: (batch_size, num_layers, num_tokens, hidden_dim)
+
+        # Compute weighted sum of hidden states across layers and tokens
+        weighted_sum = weighted_hidden_states.sum(dim=(1, 2))  # Sum over layers and tokens, resulting in (batch_size, hidden_dim)
+        
+        # Normalize by the sum of the weights (this gives a weighted mean)
+        weight_sum = weight_matrix_expanded.sum(dim=(1, 2))  # Sum of weights over layers and tokens, resulting in (1, 1, 1, 1)
+        
+        weighted_mean = weighted_sum / weight_sum  # Shape: (batch_size, hidden_dim)
+        
+        return weighted_mean
