@@ -21,7 +21,7 @@ class WeightedMeanReduction(nn.Module):
         all_layers = set(range(16))
         hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=all_layers).to(dtype=modeldtype)
 
-        # Apply softmax to weight matrix: sum over ALL dimensions is 1
+        # Apply softmax to weight matrix: sum over ALL dimensions is 1 TODO CHECK IF CORRECT, i think is dim=1
         weight_matrix = F.softmax(self.weight_matrix, dim=0).view((self.num_layers, self.num_tokens))
         
         return torch.einsum('blnd, ln -> bd', hidden_states, weight_matrix)
@@ -61,6 +61,6 @@ class AttentionAwareWeightedMeanReduction(nn.Module):
         attn_weights = weight_matrix * attn_mask + (1 - attn_mask) * float('-inf') # [BATCH_SIZE, 16, 70]
         print(f"attn_weights.shape post multiplication: {attn_weights.shape}")
         # Apply softmax to weight matrix: sum over ALL dimensions is 1
-        weight_matrix = F.softmax(attn_weights.view(-1, self.num_layers*self.num_tokens), dim=0).view((-1,self.num_layers, self.num_tokens))
+        weight_matrix = F.softmax(attn_weights.view(-1, self.num_layers*self.num_tokens), dim=1).view((-1,self.num_layers, self.num_tokens))
         
         return torch.einsum('blnd, bln -> bd', hidden_states, weight_matrix)
