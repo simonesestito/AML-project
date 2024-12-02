@@ -21,7 +21,7 @@ class WeightedMeanReduction(nn.Module):
         all_layers = set(range(16))
         hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=all_layers).to(dtype=modeldtype)
 
-        # Apply softmax to weight matrix: sum over ALL dimensions is 1 TODO CHECK IF CORRECT, i think is dim=1
+        # Apply softmax to weight matrix: sum over ALL dimensions is 1 
         weight_matrix = F.softmax(self.weight_matrix, dim=0).view((self.num_layers, self.num_tokens))
         
         return torch.einsum('blnd, ln -> bd', hidden_states, weight_matrix)
