@@ -58,7 +58,7 @@ class AttentionAwareWeightedMeanReduction(nn.Module):
         print(f"weight_matrix.shape post view and unsqueeze: {weight_matrix.shape}")
         attn_mask = attn_mask[:, None, :]
         print(f"attn_mask.shape post unsqueeze(1): {attn_mask.shape}")
-        attn_weights = attn_weights * attn_mask + (1 - attn_mask) * float('-inf') # [BATCH_SIZE, 16, 70]
+        attn_weights = weight_matrix * attn_mask + (1 - attn_mask) * float('-inf') # [BATCH_SIZE, 16, 70]
         print(f"attn_weights.shape post multiplication: {attn_weights.shape}")
         # Apply softmax to weight matrix: sum over ALL dimensions is 1
         weight_matrix = F.softmax(attn_weights, dim=1)
