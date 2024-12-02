@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from ..llama import LlamaInstruct
-from ..extractor import LlamaHiddenStatesExtractor, TokenReductionType
+from ..extractor import LlamaHiddenStatesExtractor
 
 
 class LightningHiddenStateSAPLMA(pl.LightningModule):
@@ -27,17 +27,18 @@ class LightningHiddenStateSAPLMA(pl.LightningModule):
 
     def on_fit_start(self):
         self.saplma_classifier.train()
+        self.reduction.train()
 
         # Xavier init all weights for all Linear
         print('[LightningSAPLMA] Initializing all weights for all Linear layers')
-        for module in self.saplma_classifier.modules():
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.zeros_(module.bias)
+        for layer in [self.reduction, self.saplma_classifier]:
+            for module in layer.modules():
+                if isinstance(module, nn.Linear):
+                    nn.init.xavier_uniform_(module.weight)
+                    if module.bias is not None:
+                        nn.init.zeros_(module.bias)
 
     def forward(self, statements: tuple[str]):
-
         # We need to reduce the hidden states to a single tensor dimension for all the tokens
         model_dtype = next(self.saplma_classifier.parameters()).dtype
         reduced_hidden_states = self.reduction(statements, self.hidden_states_extractor, model_dtype)
@@ -85,54 +86,3 @@ class LightningHiddenStateSAPLMA(pl.LightningModule):
     def configure_optimizers(self):
         assert self.hparams.batch_size is not None, 'batch_size must be set in model.hparams'
         return torch.optim.AdamW(self.parameters(), lr=self.lr * self.hparams.batch_size)
-
-class HiddenStatesReduction(nn.Module):
-    def __init__(self, hidden_states_layer_idx: int, reduction: str = 'last'):
-        super(HiddenStatesReduction, self).__init__()
-        self.reduction = reduction
-        self.hidden_states_layer_idx = hidden_states_layer_idx
-        
-    def forward(self, statements: tuple[str], extractor, model_dtype) -> torch.Tensor:
-        """
-        Apply reduction on hidden states: mean or last token
-        """
-        # Extract statements hidden states
-        hidden_states = extractor.extract_input_hidden_states_for_layer(
-            prompt=statements, for_layer=self.hidden_states_layer_idx).to(dtype=model_dtype)
-        match self.reduction:
-            case 'mean':
-                return torch.mean(hidden_states, dim=1)  # Mean across tokens
-            case 'last':
-                return hidden_states[:, -1, :]  # Last token hidden state
-            case _:
-                raise ValueError(f'Unknown reduction type: {self.reduction}')
-                
-
-class WeightedMeanReduction(nn.Module):
-    def __init__(self, num_layers: int = 16, num_tokens: int = 70):
-        super(WeightedMeanReduction, self).__init__()
-        
-        # Define learnable weight matrix (num_layers x num_tokens)
-        self.weight_matrix = nn.Parameter(torch.randn(num_layers, num_tokens) * 0.01)
-
-    def forward(self, statements: tuple[str], extractor, modeldtype) -> torch.Tensor:
-        """
-        Apply weighted mean across layers and tokens
-        """
-        
-        hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=set(x for x in range(16))).to(dtype=modeldtype)
-        # Expand weight matrix for broadcasting across batch dimension and hidden dimension
-        weight_matrix_expanded = self.weight_matrix.unsqueeze(0).unsqueeze(-1)  # Shape: (1, num_layers, num_tokens, 1)
-
-        # Apply weights to the hidden states: multiply element-wise
-        weighted_hidden_states = hidden_states * weight_matrix_expanded  # Shape: (batch_size, num_layers, num_tokens, hidden_dim)
-
-        # Compute weighted sum of hidden states across layers and tokens
-        weighted_sum = weighted_hidden_states.sum(dim=(1, 2))  # Sum over layers and tokens, resulting in (batch_size, hidden_dim)
-        
-        # Normalize by the sum of the weights (this gives a weighted mean)
-        weight_sum = weight_matrix_expanded.sum(dim=(1, 2))  # Sum of weights over layers and tokens, resulting in (1, 1, 1, 1)
-        
-        weighted_mean = weighted_sum / weight_sum  # Shape: (batch_size, hidden_dim)
-        
-        return weighted_mean
