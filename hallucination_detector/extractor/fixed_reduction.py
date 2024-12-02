@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from .hidden_states import LlamaHiddenStatesExtractor
 
 class HiddenStatesReduction(nn.Module):
     def __init__(self, hidden_states_layer_idx: int, reduction: str = 'last'):
@@ -7,7 +8,7 @@ class HiddenStatesReduction(nn.Module):
         self.reduction = reduction
         self.hidden_states_layer_idx = hidden_states_layer_idx
         
-    def forward(self, statements: tuple[str], extractor, model_dtype) -> torch.Tensor:
+    def forward(self, statements: tuple[str], extractor: LlamaHiddenStatesExtractor, model_dtype) -> torch.Tensor:
         """
         Apply reduction on hidden states: mean or last token
         """

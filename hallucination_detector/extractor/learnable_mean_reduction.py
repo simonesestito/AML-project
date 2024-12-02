@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from .hidden_states import LlamaHiddenStatesExtractor
 
 class WeightedMeanReduction(nn.Module):
     def __init__(self, num_layers: int = 16, num_tokens: int = 70):
@@ -8,12 +9,12 @@ class WeightedMeanReduction(nn.Module):
         # Define learnable weight matrix (num_layers x num_tokens)
         self.weight_matrix = nn.Parameter(torch.randn(num_layers, num_tokens) * 0.01)
 
-    def forward(self, statements: tuple[str], extractor, modeldtype) -> torch.Tensor:
+    def forward(self, statements: tuple[str], extractor: LlamaHiddenStatesExtractor, modeldtype) -> torch.Tensor:
         """
         Apply weighted mean across layers and tokens
         """
-        
-        hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=set(x for x in range(16))).to(dtype=modeldtype)
+        all_layers = set(range(16))
+        hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=all_layers).to(dtype=modeldtype)
         # Expand weight matrix for broadcasting across batch dimension and hidden dimension
         weight_matrix_expanded = self.weight_matrix.unsqueeze(0).unsqueeze(-1)  # Shape: (1, num_layers, num_tokens, 1)
 
