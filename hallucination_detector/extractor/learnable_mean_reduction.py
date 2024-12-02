@@ -42,13 +42,13 @@ class AttentionAwareWeightedMeanReduction(nn.Module):
         Apply weighted mean across layers and tokens
         """
         all_layers = set(range(16))
-        hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=all_layers).to(dtype=modeldtype)
+        hidden_states = extractor.extract_input_hidden_states_for_layers(prompt=statements, for_layers=all_layers).to(dtype=modeldtype).detach()
 
         # Also, apply attention mask to the hidden states, so that we can ignore padding tokens
         # => attention_mask: [BATCH_SIZE, SEQ_LEN]
         # We want to exclude padding tokens from the mean calculation
         # Weight matrix [layers x tokens] = [16 x 70]
-        attn_mask = get_tokenization_attention_masks(extractor.llama, prompt=statements)
+        attn_mask = get_tokenization_attention_masks(extractor.llama, prompt=statements).detach()
         # versione scifu
         # weight_matrix = self.weight_matrix.view((self.num_layers, self.num_tokens)).unsqueeze(0).expand(attn_mask.shape[0], -1, -1) # [BATCH_SIZE, 16, 70]
         # expanded_mask = attn_mask.unsqueeze(1).expand(-1, self.num_layers, self.num_tokens) # [BATCH_SIZE, 16, 70]
