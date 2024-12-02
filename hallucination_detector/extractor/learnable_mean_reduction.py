@@ -11,8 +11,7 @@ class WeightedMeanReduction(nn.Module):
         self.num_tokens = num_tokens
         
         # Define learnable weight matrix (num_layers x num_tokens)
-        self.weight_matrix = nn.Parameter(torch.zeros(num_layers * num_tokens))  # 16 x 70
-        nn.init.xavier_uniform_(self.weight_matrix)
+        self.weight_matrix = nn.Parameter(torch.rand(num_layers * num_tokens))  # 16 x 70
 
     def forward(self, statements: tuple[str], extractor: LlamaHiddenStatesExtractor, modeldtype) -> torch.Tensor:
         """
