@@ -47,10 +47,16 @@ class AttentionAwareWeightedMeanReduction(nn.Module):
         # Also, apply attention mask to the hidden states, so that we can ignore padding tokens
         # => attention_mask: [BATCH_SIZE, SEQ_LEN]
         # We want to exclude padding tokens from the mean calculation
+        # Weight matrix [layers x tokens] = [16 x 70]
         attn_mask = get_tokenization_attention_masks(extractor.llama, prompt=statements)
-        attn_weight_matrix = 
-
+        # versione scifu
+        # weight_matrix = self.weight_matrix.view((self.num_layers, self.num_tokens)).unsqueeze(0).expand(attn_mask.shape[0], -1, -1) # [BATCH_SIZE, 16, 70]
+        # expanded_mask = attn_mask.unsqueeze(1).expand(-1, self.num_layers, self.num_tokens) # [BATCH_SIZE, 16, 70]
+        # attn_weights = torch.where(expanded_mask == 0, torch.tensor(float('-inf'), device=attn_mask.device), weight_matrix) # [BATCH_SIZE, 16, 70]
+        #versione simo stramba(a detta di scifu)
+        attn_weights , attn_mask = self.weight_matrix.view((self.num_layers, self.num_tokens))[None, :, :], attn_mask[:, None, :]
+        attn_weights = attn_weights * attn_mask + (1 - attn_mask) * float('-inf') # [BATCH_SIZE, 16, 70]
         # Apply softmax to weight matrix: sum over ALL dimensions is 1
-        weight_matrix = F.softmax(self.weight_matrix, dim=0).view((self.num_layers, self.num_tokens))
+        weight_matrix = F.softmax(attn_weights, dim=1)
         
-        return torch.einsum('blnd, ln -> bd', hidden_states, weight_matrix)
+        return torch.einsum('blnd, bln -> bd', hidden_states, weight_matrix)
