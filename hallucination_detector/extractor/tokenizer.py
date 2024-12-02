@@ -16,6 +16,11 @@ def tokenize_prompts_fixed_length(llama: LlamaInstruct, prompt: str | list[str] 
 
     return tokenized_strings
 
+@torch.no_grad()
+def get_tokenization_attention_masks(llama: LlamaInstruct, prompt: str | list[str] | tuple[str]) -> torch.Tensor:
+    tokenized_strings = tokenize_prompts_fixed_length(llama, prompt)
+    return tokenized_strings.attention_mask
+
 
 @torch.no_grad()
 def convert_internals_from_layers_to_batch_items(collected_internals: list[torch.Tensor]) -> torch.Tensor:
