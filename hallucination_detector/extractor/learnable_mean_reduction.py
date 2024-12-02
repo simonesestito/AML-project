@@ -54,8 +54,12 @@ class AttentionAwareWeightedMeanReduction(nn.Module):
         # expanded_mask = attn_mask.unsqueeze(1).expand(-1, self.num_layers, self.num_tokens) # [BATCH_SIZE, 16, 70]
         # attn_weights = torch.where(expanded_mask == 0, torch.tensor(float('-inf'), device=attn_mask.device), weight_matrix) # [BATCH_SIZE, 16, 70]
         #versione simo stramba(a detta di scifu)
-        attn_weights , attn_mask = self.weight_matrix.view((self.num_layers, self.num_tokens))[None, :, :], attn_mask[:, None, :]
+        weight_matrix = self.weight_matrix.view((self.num_layers, self.num_tokens))[None, :, :]
+        print(f"weight_matrix.shape post view and unsqueeze: {weight_matrix.shape}")
+        attn_mask = attn_mask[:, None, :]
+        print(f"attn_mask.shape post unsqueeze(1): {attn_mask.shape}")
         attn_weights = attn_weights * attn_mask + (1 - attn_mask) * float('-inf') # [BATCH_SIZE, 16, 70]
+        print(f"attn_weights.shape post multiplication: {attn_weights.shape}")
         # Apply softmax to weight matrix: sum over ALL dimensions is 1
         weight_matrix = F.softmax(attn_weights, dim=1)
         
