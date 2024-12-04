@@ -21,9 +21,11 @@ def plot_weight_matrix(weight_matrix):
     Plot the weight matrix as a heatmap
     """
     assert len(weight_matrix.shape)==2 or len(weight_matrix.shape)==1, "Weight matrix should be one or bi-dimensional"
+    w,h = 20,8
     if len(weight_matrix.shape)==1:
         weight_matrix = weight_matrix.unsqueeze(0)
-    plt.figure(figsize=(20, 8))
+        h=2
+    plt.figure(figsize=(w, h))
     sns.heatmap(
         weight_matrix,
         cmap="viridis",  # Use the viridis colormap
