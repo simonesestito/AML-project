@@ -1,2 +1,3 @@
 from .original_saplma import OriginalSAPLMAClassifier
 from .hidden_states_saplma import LightningHiddenStateSAPLMA
+from .enhanced_saplma import EnhancedSAPLMAClassifier
