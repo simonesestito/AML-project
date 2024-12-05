@@ -1,0 +1,5 @@
+.hf_token
+.venv/
+__pycache__/
+publicDataset/
+lightning_logs/
