@@ -49,11 +49,7 @@ class AttentionAwareWeightedMeanReduction(nn.Module):
         # We want to exclude padding tokens from the mean calculation
         # Weight matrix [layers x tokens] = [16 x 70]
         attn_mask = get_tokenization_attention_masks(extractor.llama, prompt=statements).detach()
-        # versione scifu
-        # weight_matrix = self.weight_matrix.view((self.num_layers, self.num_tokens)).unsqueeze(0).expand(attn_mask.shape[0], -1, -1) # [BATCH_SIZE, 16, 70]
-        # expanded_mask = attn_mask.unsqueeze(1).expand(-1, self.num_layers, self.num_tokens) # [BATCH_SIZE, 16, 70]
-        # attn_weights = torch.where(expanded_mask == 0, torch.tensor(float('-inf'), device=attn_mask.device), weight_matrix) # [BATCH_SIZE, 16, 70]
-        #versione simo stramba(a detta di scifu)
+       
         weight_matrix = self.weight_matrix.view((self.num_layers, self.num_tokens))[None, :, :] # [1, 16, 70]
         attn_mask = attn_mask[:, None, :] # [BATCH_SIZE, 1, 70]
         attn_weights = weight_matrix * attn_mask - 1000 * (1 - attn_mask) # [BATCH_SIZE, 16, 70]
