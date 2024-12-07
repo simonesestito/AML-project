@@ -16,9 +16,9 @@ def try_to_overfit(llama: LlamaInstruct,saplma_version: nn.Module,reduction: nn.
     trainer = pl.Trainer(overfit_batches=1, max_epochs=100, log_every_n_steps=1)
     trainer.fit(model=model, train_dataloaders=datamodule.train_dataloader(shuffle=False))
 
-def plot_weight_matrix(weight_matrix):
+def plot_weight_matrix(weight_matrix, x_label, y_label):
     """
-    Plot the weight matrix as a heatmap
+    Plot a weight matrix as a heatmap
     """
     assert len(weight_matrix.shape)==2 or len(weight_matrix.shape)==1, "Weight matrix should be one or bi-dimensional"
     w,h = 20,8
@@ -35,6 +35,6 @@ def plot_weight_matrix(weight_matrix):
 
     # Add labels and a title
     plt.title("Weight Matrix Visualization")
-    plt.xlabel("Tokens")
-    plt.ylabel("Layers")
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
     plt.show()
