@@ -1,1 +1,2 @@
 from .utils import plot_weight_matrix, try_to_overfit
+from .classificator_evaluation import ClassificatorEvaluation
