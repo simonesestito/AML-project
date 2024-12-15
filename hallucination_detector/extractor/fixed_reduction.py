@@ -1,9 +1,12 @@
 import torch
 import torch.nn as nn
+from typing import Union, Literal, TypeAlias
 from .hidden_states import LlamaHiddenStatesExtractor
 
+ReductionType: TypeAlias = Union[int, Literal['mean', 'last']]
+
 class HiddenStatesReduction(nn.Module):
-    def __init__(self, hidden_states_layer_idx: int, reduction: str = 'last'):
+    def __init__(self, hidden_states_layer_idx: int, reduction: TypeAlias = 'last'):
         super(HiddenStatesReduction, self).__init__()
         self.reduction = reduction
         self.hidden_states_layer_idx = hidden_states_layer_idx
@@ -15,10 +18,13 @@ class HiddenStatesReduction(nn.Module):
         # Extract statements hidden states
         hidden_states = extractor.extract_input_hidden_states_for_layer(
             prompt=statements, for_layer=self.hidden_states_layer_idx).to(dtype=model_dtype)
-        match self.reduction:
-            case 'mean':
-                return torch.mean(hidden_states, dim=1)  # Mean across tokens
-            case 'last':
-                return hidden_states[:, 64, :]  # Last token hidden state
-            case _:
-                raise ValueError(f'Unknown reduction type: {self.reduction}')
+        
+        if self.reduction == 'mean':
+            return torch.mean(hidden_states, dim=1)
+        elif self.reduction == 'last':
+            self.reduction = -1
+
+        if not isinstance(self.reduction, int):
+            raise ValueError(f'Unknown reduction type: {self.reduction}')
+        
+        return hidden_states[:, self.reduction, :]
