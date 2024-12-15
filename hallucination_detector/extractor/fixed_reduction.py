@@ -19,6 +19,6 @@ class HiddenStatesReduction(nn.Module):
             case 'mean':
                 return torch.mean(hidden_states, dim=1)  # Mean across tokens
             case 'last':
-                return hidden_states[:, -1, :]  # Last token hidden state
+                return hidden_states[:, 64, :]  # Last token hidden state
             case _:
                 raise ValueError(f'Unknown reduction type: {self.reduction}')
