@@ -1,4 +1,4 @@
-# Study on Hallucination Detection by LLMs hidden state analysis
+# Study on Hallucination Detection by LLMs hidden state analysis: Related works
 
 As a task for our final project for the *Advanced Machine Learning 2024/2025* course at Sapienza, we chose **hallucination detection**, which consists in predicting when a Large Language Model is generating false or misleading information, even though it would have the needed knowledge to answer correctly. 
 
@@ -29,7 +29,7 @@ Or we could have chosen an unsupervised setting to hallucination detection lever
 
 The work on SAPLMA by [*Azaria and Mitchell, 2023*] is contextualized in **Cognitive Dissonance: Why Do Language Model Outputs Disagree with Internal Representations of Truthfulness?** [*Liu et al., 2023*], where the authors explore the differences in the LLM queries output and their internal activations (*probes*), such as the hidden states. They categorize the disagreements between queries and probes as *Model Confabulation* (when probe confidence is low and the completions from queries are confidently incorrect), *Heterogeneity* (when probes and queries exhibit different accuracy on specific input subsets) and *Deception* (when the probe is confidently correct and the query completion is confidently incorrect), where the work on SAPLMA by [*Azaria and Mitchell, 2023*] is collocated. In fact, the authors show that most of the times probes outperform queries, but also that we could benefit from training an ensemble model leveraging both LLM probability distribution and hidden state features.
 
-
+*Arianna Paolini, Alessandro Scifoni, Simone Sestito*
 
 ### References
 - *The Internal State of an LLM Knows When It’s Lying*, Azaria and Mitchell, 2023 (https://arxiv.org/pdf/2304.13734)
